@@ -9,6 +9,25 @@ from quix_client import send_message_to_kafka
 router = Router()
 
 
+def clean_message_text(message: Message) -> str:
+    """Очищает текст сообщения от ссылок и форматирования"""
+    if not message.text and not message.caption:
+        return ""
+
+    text = message.text or message.caption
+
+    if message.entities:
+        entities = sorted(message.entities,
+                          key=lambda x: x.offset, reverse=True)
+
+        for entity in entities:
+            if entity.type in ['url', 'text_link']:
+                text = text[:entity.offset] + \
+                    text[entity.offset + entity.length:]
+
+    return text.strip()
+
+
 @router.message(Command('start'))
 async def cmd_start(message: Message):
     '''Handle /start command'''
@@ -19,7 +38,8 @@ async def cmd_start(message: Message):
         )
     else:
         await message.reply(
-            'Привет! Добавьте меня в группу, чтобы я мог проверять сообщения на спам.'
+            'Привет! Добавьте меня в группу, чтобы я мог '
+            'проверять сообщения на спам.'
         )
 
 
@@ -36,36 +56,33 @@ async def cmd_help(message: Message):
     await message.reply(help_text)
 
 
-@router.message(F.chat.type == ChatType.SUPERGROUP)
+@router.message(F.chat.type(chat_type=[ChatType.GROUP, ChatType.SUPERGROUP]))
 async def handle_group_message(message: Message):
     '''Handle all messages in groups'''
     logging.info('сообщение обработалось')
     if message.from_user.is_bot:
         return
 
-    message_data = {
+    # Формируем словарь с нужными полями
+    message_dict = {
         'telegram_id': message.from_user.id,
         'username': message.from_user.username,
-        'first_name': message.from_user.first_name,
-        'last_name': message.from_user.last_name,
-        'message_text': message.text or message.caption or '',
+        'message_text': clean_message_text(message),
         'chat_id': message.chat.id,
         'message_id': message.message_id,
         'date': message.date.isoformat() if message.date else None,
-        'has_media': bool(
-            message.photo or message.video or message.document or message.audio
-        ),
         'entities': [
             {
                 'type': entity.type,
                 'offset': entity.offset,
-                'length': entity.length
+                'length': entity.length,
+                'url': entity.url if hasattr(entity, 'url') else None
             }
             for entity in (message.entities or [])
         ] if message.entities else []
     }
 
     try:
-        await send_message_to_kafka(message_data)
+        await send_message_to_kafka(message_dict)
     except Exception as e:
-        logging.error(f'Error sending message to Kafka: {e}')
+        print(f'Error sending message to Kafka: {e}')
