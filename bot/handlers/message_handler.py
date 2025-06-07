@@ -56,14 +56,13 @@ async def cmd_help(message: Message):
     await message.reply(help_text)
 
 
-@router.message(F.chat.type(chat_type=[ChatType.GROUP, ChatType.SUPERGROUP]))
+@router.message(F.chat.type == ChatType.SUPERGROUP)
 async def handle_group_message(message: Message):
     '''Handle all messages in groups'''
     logging.info('сообщение обработалось')
     if message.from_user.is_bot:
         return
 
-    # Формируем словарь с нужными полями
     message_dict = {
         'telegram_id': message.from_user.id,
         'username': message.from_user.username,
