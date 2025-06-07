@@ -1,10 +1,9 @@
-import json
 import logging
 from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.enums import ChatType
-from quix_client import clean_message, send_message_to_kafka
+from quix_client import send_message_to_kafka
 
 router = Router()
 
