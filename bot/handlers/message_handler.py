@@ -64,7 +64,7 @@ async def handle_group_message(message: Message):
 
     msg_json = {
         "message_id": message.message_id,
-        "date": message.date,
+        "date": message.date.timestamp(),
         "chat_id": message.chat.id,
         "chat_type": message.chat.type,
         "user_id": message.from_user.id,
