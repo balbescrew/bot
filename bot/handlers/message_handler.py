@@ -82,6 +82,6 @@ async def handle_group_message(message: Message):
     }
 
     try:
-        await clean_message(message_dict)
+        clean_message(message_dict)
     except Exception as e:
         print(f'Error sending message to Kafka: {e}')
