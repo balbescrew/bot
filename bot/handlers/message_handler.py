@@ -63,26 +63,21 @@ async def handle_group_message(message: Message):
     if message.from_user.is_bot:
         return
 
-    message_dict = {
-        'telegram_id': message.from_user.id,
-        'username': message.from_user.username,
-        'message_text': clean_message_text(message),
-        'chat_id': message.chat.id,
-        'message_id': message.message_id,
-        'date': message.date.isoformat() if message.date else None,
-        'entities': [
-            {
-                'type': entity.type,
-                'offset': entity.offset,
-                'length': entity.length,
-                'url': entity.url if hasattr(entity, 'url') else None
-            }
-            for entity in (message.entities or [])
-        ] if message.entities else []
+    msg_json = {
+        "message_id": message.message_id,
+        "date": message.date,
+        "chat_id": message.chat.id,
+        "chat_type": message.chat.type,
+        "user_id": message.from_user.id,
+        "user_username": message.from_user.username,
+        "user_first_name": message.from_user.first_name,
+        "user_last_name": message.from_user.last_name,
+        "text": message.text,
+        "reply_to_message_id":
+        message.reply_to_message.message_id
     }
 
     try:
-        cleaned = clean_message(message_dict)
-        await send_message_to_kafka(cleaned)
+        await send_message_to_kafka(msg_json)
     except Exception as e:
         print(f'Error sending message to Kafka: {e}')
