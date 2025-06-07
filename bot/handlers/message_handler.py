@@ -4,7 +4,7 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.enums import ChatType
-from quix_client import send_message_to_kafka
+from quix_client import clean_message
 
 router = Router()
 
@@ -82,6 +82,6 @@ async def handle_group_message(message: Message):
     }
 
     try:
-        await send_message_to_kafka(message_dict)
+        await clean_message(message_dict)
     except Exception as e:
         print(f'Error sending message to Kafka: {e}')
