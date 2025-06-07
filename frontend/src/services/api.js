@@ -1,3 +1,32 @@
+import axios from 'axios';
+import { getAuthHeader } from './auth';
+
+export const api = axios.create({
+  baseURL: '/api',
+});
+
+api.interceptors.request.use((config) => {
+  const authHeader = getAuthHeader();
+  if (authHeader.Authorization) {
+    config.headers.Authorization = authHeader.Authorization;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      // Обработка случая, когда токен недействителен
+      console.error('Unauthorized - возможно, нужно разлогинить пользователя');
+    }
+    return Promise.reject(error);
+  }
+);
+
+
+/////////////////////////////////////
+
 export const fetchChats = async () => {
   const response = await fetch('/api/chats');
   if (!response.ok) throw new Error('Failed to fetch chats');
