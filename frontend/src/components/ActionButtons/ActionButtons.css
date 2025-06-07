@@ -1,0 +1,37 @@
+.action-buttons {
+  display: flex;
+  padding: 15px;
+  gap: 15px;
+  background-color: #f5f5f5;
+  border-top: 1px solid #e0e0e0;
+}
+
+.spam-button, .not-spam-button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.spam-button {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.not-spam-button {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.spam-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+}
+
+.not-spam-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(46, 204, 113, 0.3);
+}

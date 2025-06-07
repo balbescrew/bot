@@ -1,0 +1,18 @@
+.message-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.message-content {
+  flex-grow: 1;
+  padding: 20px;
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-y: auto;
+  background-color: #f9f9f9;
+}

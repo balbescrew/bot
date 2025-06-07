@@ -1,0 +1,25 @@
+.message-header {
+  padding: 15px;
+  background-color: #3498db;
+  color: white;
+  font-family: 'Courier New', monospace;
+}
+
+.header-row {
+  display: flex;
+  margin-bottom: 5px;
+}
+
+.header-row:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  font-weight: bold;
+  min-width: 100px;
+  color: #e0f7fa;
+}
+
+.value {
+  color: #ffffff;
+}
