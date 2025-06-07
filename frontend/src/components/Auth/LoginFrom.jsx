@@ -12,15 +12,37 @@ const LoginForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!email || !password) {
+      setError('Пожалуйста, заполните все поля');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
+
+
     const result = await login(email, password);
     
-    if (result.success) {
-      navigate('/');
-    } else {
-      setError(result.message || 'Ошибка входа');
+    try {
+      const result = await login(email, password);
+      
+      if (result.success) {
+        // Дополнительные действия после успешного входа
+        localStorage.setItem('lastLogin', new Date().toISOString());
+        
+        // Перенаправление на предыдущую страницу или по умолчанию
+        const returnTo = '/';
+        navigate(returnTo, { replace: true });
+      } else {
+        setError(result.message || 'Неверный email или пароль');
+      }
+    } catch (error) {
+      console.error('Ошибка входа:', error);
+      setError('Произошла ошибка при входе. Попробуйте позже.');
+    } finally {
+      setLoading(false);
     }
     
     setLoading(false);
