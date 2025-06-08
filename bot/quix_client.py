@@ -23,33 +23,48 @@ async def send_message_to_kafka(
     logger.debug(f"Produced message to Kafka: {message_dict}")
 
 
+async def process_message(message: dict, bot: Bot):
+    try:
+        logger.info('сообщение удаляется')
+        await bot.delete_message(
+            chat_id=message['chat_id'],
+            message_id=message['message_id'],
+        )
+        logger.info('сообщение удалилось')
+    except Exception as e:
+        logger.error(f"Failed to delete message: {e}")
+
+
 async def consumer(
-        topic: str = "spam_messages", app: Application = kafka, bot: Bot = None
+        topic: str = "spam_messages", bot: Bot = None
 ):
     app = Application(
         broker_address="10.10.127.2:9092",
         loglevel="INFO",
-        consumer_group='delete_bot',
+        consumer_group="delete_bot"
     )
 
-    with app.get_consumer() as consumer:
-        consumer.subscribe([topic])
+    consumer = app.get_consumer()
+    consumer.subscribe([topic])
+    logger.info(f"Subscribed to Kafka topic: {topic}")
 
+    try:
         while True:
-            msg = consumer.poll(1)
+            msg = consumer.poll(1.0)
             if msg is None:
+                await asyncio.sleep(0.1)
                 continue
-            elif msg.error() is not None:
-                raise Exception(msg.error())
+
+            if msg.error():
+                logger.error(f"Kafka message error: {msg.error()}")
+                continue
 
             message = json.loads(msg.value())
             logger.info(f"Received message from Kafka: {message}")
-            try:
-                logger.info('сообщение удаляется')
-                asyncio.create_task(bot.delete_message(
-                    message['chat_id'],
-                    message['message_id'],
-                ))
-                logger.info('сообщение удалилось')
-            except Exception as e:
-                logger.error(f"Failed to delete message: {e}")
+
+            asyncio.create_task(process_message(message, bot))
+
+    except Exception as e:
+        logger.error(f"Kafka consumer loop error: {e}")
+    finally:
+        consumer.close()

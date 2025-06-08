@@ -22,10 +22,25 @@ async def telegram_loop():
 
 
 async def main():
-    asyncio.gather(
-        telegram_loop(),
-        consumer(bot=BOT)
-    )
+    tasks = [
+        asyncio.create_task(telegram_loop()),
+        asyncio.create_task(consumer(bot=BOT)),
+    ]
+
+    try:
+        await asyncio.gather(*tasks)
+    except asyncio.CancelledError:
+        logger.info("Tasks were cancelled")
+    except KeyboardInterrupt:
+        logger.info("KeyboardInterrupt received, cancelling tasks...")
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        exit(0)
+        logger.info("Shutdown complete.")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        exit(0)
