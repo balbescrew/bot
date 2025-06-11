@@ -1,20 +1,20 @@
 import asyncio
 import json
 from logging import getLogger
-from quixstreams import Application
+
 from aiogram import Bot
+from quixstreams import Application
+
+from config import KAFKA_BROKER
 
 logger = getLogger(__name__)
 logger.setLevel("DEBUG")
 
-kafka = Application(
-    broker_address="10.10.127.2:9092",
-)
 
-
-async def send_message_to_kafka(
-        message_dict: dict, topic: str = "raw_messages"
-):
+async def send_message_to_kafka(message_dict: dict, topic: str = "raw_messages"):
+    kafka = Application(
+        broker_address=KAFKA_BROKER,
+    )
     with kafka.get_producer() as producer:
         producer.produce(
             topic=topic,
@@ -25,26 +25,25 @@ async def send_message_to_kafka(
 
 async def process_message(message: dict, bot: Bot):
     try:
-        logger.info('сообщение удаляется')
+        logger.info("сообщение удаляется")
         await bot.delete_message(
-            chat_id=message['chat_id'],
-            message_id=message['message_id'],
+            chat_id=message["chat_id"],
+            message_id=message["message_id"],
         )
-        logger.info('сообщение удалилось')
+        logger.info("сообщение удалилось")
     except Exception as e:
         logger.error(f"Failed to delete message: {e}")
 
 
-async def consumer(
-        topic: str = "spam_messages", bot: Bot = None
-):
-    app = Application(
-        broker_address="10.10.127.2:9092",
-        loglevel="INFO",
-        consumer_group="delete_bot"
+async def consumer(topic: str = "spam_messages", bot: Bot | None = None):
+    if bot is None:
+        raise ValueError("Bot instance must be provided")
+
+    kafka = Application(
+        broker_address=KAFKA_BROKER, loglevel="INFO", consumer_group="delete_bot"
     )
 
-    consumer = app.get_consumer()
+    consumer = kafka.get_consumer()
     consumer.subscribe([topic])
     logger.info(f"Subscribed to Kafka topic: {topic}")
 
@@ -59,7 +58,11 @@ async def consumer(
                 logger.error(f"Kafka message error: {msg.error()}")
                 continue
 
-            message = json.loads(msg.value())
+            raw_value = msg.value()
+            if not raw_value:
+                logger.warning("Received empty message from Kafka")
+                continue
+            message = json.loads(raw_value)
             logger.info(f"Received message from Kafka: {message}")
 
             asyncio.create_task(process_message(message, bot))

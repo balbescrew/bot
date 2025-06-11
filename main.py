@@ -3,6 +3,7 @@ import logging
 from logging import getLogger
 
 from aiogram import Bot, Dispatcher
+
 from config import BOT_TOKEN
 from handlers.message_handler import router as message_router
 from quix_client import consumer
@@ -38,6 +39,7 @@ async def main():
         await asyncio.gather(*tasks, return_exceptions=True)
         exit(0)
         logger.info("Shutdown complete.")
+
 
 if __name__ == "__main__":
     try:
