@@ -4,45 +4,34 @@ from logging import getLogger
 
 from aiogram import Bot, Dispatcher
 
-from config import BOT_TOKEN
+from config import BOT_TOKEN, ENABLE_KAFKA
 from handlers.message_handler import router as message_router
-from quix_client import consumer
+from kafka_client import init_kafka_producer, stop_kafka_producer
 
 logging.basicConfig(level=logging.INFO)
 logger = getLogger(__name__)
 logger.setLevel("DEBUG")
 
 
-BOT: Bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher()
-dp.include_router(message_router)
-
-
-async def telegram_loop():
-    await dp.start_polling(BOT)
-
-
 async def main():
-    tasks = [
-        asyncio.create_task(telegram_loop()),
-        asyncio.create_task(consumer(bot=BOT)),
-    ]
+    BOT = Bot(token=BOT_TOKEN)
+    dp = Dispatcher()
+    dp.include_router(message_router)
 
-    try:
-        await asyncio.gather(*tasks)
-    except asyncio.CancelledError:
-        logger.info("Tasks were cancelled")
-    except KeyboardInterrupt:
-        logger.info("KeyboardInterrupt received, cancelling tasks...")
-        for task in tasks:
-            task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
-        exit(0)
-        logger.info("Shutdown complete.")
+    if ENABLE_KAFKA:
+        await init_kafka_producer()
+        try:
+            logger.info("Starting Telegram bot polling...")
+            await dp.start_polling(BOT)
+        finally:
+            await stop_kafka_producer()
+    else:
+        logger.info("Kafka is disabled, starting Telegram bot polling without Kafka...")
+        await dp.start_polling(BOT)
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
-    except KeyboardInterrupt:
-        exit(0)
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Bot polling stopped.")
